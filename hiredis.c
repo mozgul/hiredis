@@ -668,6 +668,34 @@ int redisReconnect(redisContext *c) {
     return REDIS_ERR;
 }
 
+/* Reconnects the underlying transport without invalidating buffers.
+ * It keeps the obuf but resets the reader. */
+int redisReconnectEx(redisContext *c) {
+    c->err = 0;
+    memset(c->errstr, '\0', strlen(c->errstr));
+
+    if (c->fd > 0) {
+        close(c->fd);
+        c->fd = 0;
+    }
+
+    redisReaderFree(c->reader);
+    c->reader = redisReaderCreate();
+
+    if (c->connection_type == REDIS_CONN_TCP) {
+        return redisContextConnectBindTcp(c, c->tcp.host, c->tcp.port,
+                c->timeout, c->tcp.source_addr);
+    } else if (c->connection_type == REDIS_CONN_UNIX) {
+        return redisContextConnectUnix(c, c->unix_sock.path, c->timeout);
+    } else {
+        /* Something bad happened here and shouldn't have. There isn't
+           enough information in the context to reconnect. */
+        __redisSetError(c,REDIS_ERR_OTHER,"Not enough information to reconnect");
+    }
+
+    return REDIS_ERR;
+}
+
 /* Connect to a Redis instance. On error the field error in the returned
  * context will be set to the return value of the error function.
  * When no set of reply functions is given, the default set will be used. */

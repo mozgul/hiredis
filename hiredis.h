@@ -183,6 +183,18 @@ redisContext *redisConnectFd(int fd);
  */
 int redisReconnect(redisContext *c);
 
+/**
+ * Keep unsent data intact and reconnect the given context using the saved information.
+ *
+ * This re-uses the exact same connect options as in the initial connection.
+ * host, ip (or path), timeout and bind address are reused,
+ * flags are used unmodified from the existing context.
+ * It does not invalidates the obuf and keeps the unsent data.
+ *
+ * Returns REDIS_OK on successful connect or REDIS_ERR otherwise.
+ */
+ int redisReconnectEx(redisContext *c);
+    
 int redisSetTimeout(redisContext *c, const struct timeval tv);
 int redisEnableKeepAlive(redisContext *c);
 void redisFree(redisContext *c);
