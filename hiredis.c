@@ -873,12 +873,18 @@ int redisBufferWrite(redisContext *c, int *done) {
                 return REDIS_ERR;
             }
         } else if (nwritten > 0) {
+        /* Make sure the connection is still "established" before releasing the buffer*/
+        if (redisCheckConnection(c) == REDIS_OK) {
             if (nwritten == (signed)sdslen(c->obuf)) {
                 sdsfree(c->obuf);
                 c->obuf = sdsempty();
             } else {
                 sdsrange(c->obuf,nwritten,-1);
             }
+        }
+        } else {
+            __redisSetError(c,REDIS_ERR_IO,NULL);
+            return REDIS_ERR;
         }
     }
     if (done != NULL) *done = (sdslen(c->obuf) == 0);

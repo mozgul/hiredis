@@ -475,3 +475,8 @@ int redisContextConnectUnix(redisContext *c, const char *path, const struct time
     c->flags |= REDIS_CONNECTED;
     return REDIS_OK;
 }
+
+int redisCheckConnection(redisContext *c) {
+    char buffer;
+    return recv(c->fd, &buffer, 1, MSG_PEEK) > 0 ? REDIS_OK : REDIS_ERR;
+}
